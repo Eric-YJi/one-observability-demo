@@ -27,7 +27,7 @@ if [ -z $STACK_NAME_CODEPIPELINE ]; then STACK_NAME_CODEPIPELINE="Observability-
 
 # Fix for CDK teardown issues
 aws eks update-kubeconfig --name PetSite
-kubectl delete -f https://raw.githubusercontent.com/aws-samples/one-observability-demo/main/PetAdoptions/cdk/pet_stack/resources/load_balancer/crds.yaml
+kubectl delete -f https://raw.githubusercontent.com/Eric-YJi/one-observability-demo/main/PetAdoptions/cdk/pet_stack/resources/load_balancer/crds.yaml
 
 #Deleting keycloak
 kubectl delete namespace keycloak --force
