@@ -18,16 +18,14 @@ using Environments = Amazon.CloudWatch.EMF.Environment.Environments;
 
 namespace PetSite
 {
-    private readonly IConfiguration _config;
-
     public class Startup
     {
+        private readonly IConfiguration _config;
+
         public Startup(IConfiguration configuration)
         {
             _config = configuration;
-            new ConfigurationBuilder()
-                .AddEnvironmentVariables()
-                .Build();
+            new ConfigurationBuilder().AddEnvironmentVariables().Build();
 
             // load the host IP so we can connect to the daemonSet running locally
             var hostIp = Environment.GetEnvironmentVariable("HOST_IP");
@@ -78,7 +76,8 @@ namespace PetSite
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
+                    pattern: "{controller=Home}/{action=Index}/{id?}"
+                );
                 endpoints.MapMetrics();
             });
         }
