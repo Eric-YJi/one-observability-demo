@@ -395,7 +395,8 @@ export class Services extends Stack {
 //                assumedBy: eksFederatedPrincipal,
             assumedBy: new iam.AccountRootPrincipal(),
             managedPolicies: [
-                iam.ManagedPolicy.fromManagedPolicyArn(this, 'CWServiceAccount-CloudWatchAgentServerPolicy', 'arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy')
+                iam.ManagedPolicy.fromManagedPolicyArn(this, 'CWServiceAccount-CloudWatchAgentServerPolicy', 'arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy'),
+                iam.ManagedPolicy.fromManagedPolicyArn(this, 'CWServiceAccount-CloudWatchFullAccessPolicy', 'arn:aws:iam::aws:policy/CloudWatchFullAccess')
             ],
         });
         cwserviceaccount.assumeRolePolicy?.addStatements(cw_trustRelationship);

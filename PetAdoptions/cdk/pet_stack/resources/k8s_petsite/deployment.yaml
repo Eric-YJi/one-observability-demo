@@ -17,10 +17,10 @@ metadata:
     prometheus.io/scrape: "true"
 spec:
   ports:
-  - port: 80
-    nodePort: 30300
-    targetPort: 80
-    protocol: TCP
+    - port: 80
+      nodePort: 30300
+      targetPort: 80
+      protocol: TCP
   type: NodePort
   selector:
     app: petsite
@@ -42,15 +42,19 @@ spec:
     spec:
       serviceAccountName: petsite-sa
       containers:
-      - image: "{{ECR_IMAGE_URL}}"
-        imagePullPolicy: Always
-        name: petsite
-        ports:
-        - containerPort: 80
-          protocol: TCP
-        env:
-        - name: AWS_XRAY_DAEMON_ADDRESS
-          value: xray-service.default:2000
+        - image: "{{ECR_IMAGE_URL}}"
+          imagePullPolicy: Always
+          name: petsite
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          env:
+            - name: AWS_XRAY_DAEMON_ADDRESS
+              value: xray-service.default:2000
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
 ---
 apiVersion: elbv2.k8s.aws/v1beta1
 kind: TargetGroupBinding

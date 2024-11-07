@@ -1,3 +1,6 @@
+using Amazon.CloudWatch.EMF;
+using Amazon.CloudWatch.EMF.Config;
+using Amazon.CloudWatch.EMF.Environment;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,16 +13,32 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Prometheus;
 
+using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
+using Environments = Amazon.CloudWatch.EMF.Environment.Environments;
+
 namespace PetSite
 {
+    private readonly IConfiguration _config;
+
     public class Startup
     {
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            _config = configuration;
             new ConfigurationBuilder()
                 .AddEnvironmentVariables()
                 .Build();
+
+            // load the host IP so we can connect to the daemonSet running locally
+            var hostIp = Environment.GetEnvironmentVariable("HOST_IP");
+            var emfConfig = new Configuration()
+            {
+                AgentEndPoint = $"tcp://{hostIp}:25888",
+                LogGroupName = null
+            };
+
+            emfConfig.EnvironmentOverride = Environments.Agent;
+            Amazon.CloudWatch.EMF.Config.EnvironmentConfigurationProvider.Config = emfConfig;
         }
 
         public IConfiguration Configuration { get; }
@@ -27,13 +46,14 @@ namespace PetSite
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddEmf();
             services.AddControllersWithViews();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.UseXRay("PetSite", Configuration);
+            app.UseXRay("PetSite", _config);
 
             if (env.IsDevelopment())
             {
@@ -49,6 +69,7 @@ namespace PetSite
             app.UseStaticFiles();
 
             app.UseRouting();
+            app.UseEmfMiddleware();
             app.UseHttpMetrics();
 
             app.UseAuthorization();
