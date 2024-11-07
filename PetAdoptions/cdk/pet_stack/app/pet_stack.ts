@@ -4,6 +4,7 @@ import { Services } from '../lib/services';
 import { Applications } from '../lib/applications';
 //import { EKSPetsite } from '../lib/ekspetsite'
 import { App, Tags, Aspects } from 'aws-cdk-lib';
+import {CloudWatchAlarms} from "../lib/alarms";
 //import { AwsSolutionsChecks } from 'cdk-nag';
 
 
@@ -20,6 +21,12 @@ const applications = new Applications(app, "Applications", {
   env: { 
     account: process.env.CDK_DEFAULT_ACCOUNT, 
     region: process.env.CDK_DEFAULT_REGION 
+}});
+
+const alarms = new CloudWatchAlarms(app,  "Odyssey-Workshop-Demo-Alarms", {
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION
 }});
 
 Tags.of(app).add("Workshop","true")
