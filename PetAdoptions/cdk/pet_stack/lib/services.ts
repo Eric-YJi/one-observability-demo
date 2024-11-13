@@ -513,6 +513,62 @@ export class Services extends Stack {
         awsLoadBalancerManifest.node.addDependency(loadBalancerServiceAccount);
         awsLoadBalancerManifest.node.addDependency(waitForLBServiceAccount);
 
+        // NOTE: amazon-cloudwatch namespace is created here!!
+        const fluentbitYaml = yaml.loadAll(
+            readFileSync('./resources/cwagent-fluent-bit-quickstart.yaml', 'utf8'),
+        ) as Record<string, any>[];
+        fluentbitYaml[1].metadata.annotations['eks.amazonaws.com/role-arn'] = new CfnJson(this, 'fluentbit_Role', {
+            value: `${cwserviceaccount.roleArn}`,
+        });
+
+        fluentbitYaml[4].data['cwagentconfig.json'] = JSON.stringify({
+            agent: {
+                region: region,
+            },
+            logs: {
+                metrics_collected: {
+                    kubernetes: {
+                        cluster_name: 'PetSite',
+                        metrics_collection_interval: 60,
+                    },
+                },
+                force_flush_interval: 5,
+            },
+        });
+
+        fluentbitYaml[6].data['cluster.name'] = 'PetSite';
+        fluentbitYaml[6].data['logs.region'] = region;
+        fluentbitYaml[7].metadata.annotations['eks.amazonaws.com/role-arn'] = new CfnJson(this, 'cloudwatch_Role', {
+            value: `${cwserviceaccount.roleArn}`,
+        });
+
+        // The `cluster-info` configmap is used by the current Python implementation for the `AwsEksResourceDetector`
+        fluentbitYaml[12].data['cluster.name'] = 'PetSite';
+        fluentbitYaml[12].data['logs.region'] = region;
+
+        const fluentbitManifest = new eks.KubernetesManifest(this, 'cloudwatcheployment', {
+            cluster: cluster,
+            manifest: fluentbitYaml,
+        });
+        fluentbitManifest.node.addDependency(awsLoadBalancerManifest);
+
+        // CloudWatch agent for prometheus metrics
+        const prometheusYaml = yaml.loadAll(readFileSync('./resources/prometheus-eks.yaml', 'utf8')) as Record<
+            string,
+            any
+        >[];
+
+        prometheusYaml[0].metadata.annotations['eks.amazonaws.com/role-arn'] = new CfnJson(this, 'prometheus_Role', {
+            value: `${cwserviceaccount.roleArn}`,
+        });
+
+        const prometheusManifest = new eks.KubernetesManifest(this, 'prometheusdeployment', {
+            cluster: cluster,
+            manifest: prometheusYaml,
+        });
+
+        prometheusManifest.node.addDependency(fluentbitManifest); // Namespace creation dependency
+
 
         // NOTE: Amazon CloudWatch Observability Addon for CloudWatch Agent and Fluentbit
         const otelAddon = new eks.CfnAddon(this, 'otelObservabilityAddon', {
