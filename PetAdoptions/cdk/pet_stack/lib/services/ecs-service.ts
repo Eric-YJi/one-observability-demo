@@ -42,6 +42,8 @@ export abstract class EcsService extends Construct {
       "logs:CreateLogStream",
       "logs:DescribeLogGroups",
       "logs:PutLogEvents",
+      "logs:PutRetentionPolicy",
+      "cloudwatch:PutMetricData",
       "xray:PutTraceSegments",
       "xray:PutTelemetryRecords",
       "xray:GetSamplingRules",
@@ -190,7 +192,7 @@ export abstract class EcsService extends Construct {
         image: ecs.ContainerImage.fromRegistry('public.ecr.aws/aws-observability/aws-otel-collector:v0.32.0'),
         memoryLimitMiB: 256,
         cpu: 256,
-        command: ["--config", "/etc/ecs/ecs-xray.yaml"],
+        command: ["--config", "/etc/ecs/ecs-default-config.yaml"],
         logging
     });
   }
