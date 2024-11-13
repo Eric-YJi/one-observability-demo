@@ -1,5 +1,7 @@
 package ca.petsearch;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.ClientConfigurationFactory;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -44,7 +46,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Bean
     public AmazonS3 amazonS3() {
+        ClientConfiguration clientConfiguration = new ClientConfiguration().withMaxErrorRetry(0).withConnectionTimeout(5000);
         return withLocalEndpoint(AmazonS3ClientBuilder.standard())
+                .withClientConfiguration(clientConfiguration)
                 .build();
     }
 

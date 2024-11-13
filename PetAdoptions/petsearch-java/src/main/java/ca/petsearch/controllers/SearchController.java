@@ -4,6 +4,7 @@ import ca.petsearch.MetricEmitter;
 import ca.petsearch.RandomNumberGenerator;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -13,6 +14,8 @@ import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagement;
 import com.amazonaws.services.simplesystemsmanagement.model.GetParameterRequest;
 import com.amazonaws.services.simplesystemsmanagement.model.GetParameterResult;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
@@ -79,15 +82,16 @@ public class SearchController {
             String s3BucketName = getSSMParameter(BUCKET_NAME);
 
             String key = getKey(petType, image);
-            
-            Double randomnumber = Math.random()*9999;
 
-            if (randomnumber < 100) {
-                logger.debug("Forced exception to show S3 bucket creation error. The bucket never really gets created due to lack of permissions");
-                logger.info("Trying to create a S3 Bucket");
-                logger.info(randomnumber + " is the random number");
-                s3Client.createBucket(s3BucketName);
-            }
+            // Disable random failures
+//            Double randomnumber = Math.random()*9999;
+
+//            if (randomnumber < 100) {
+//                logger.debug("Forced exception to show S3 bucket creation error. The bucket never really gets created due to lack of permissions");
+//                logger.info("Trying to create a S3 Bucket");
+//                logger.info(randomnumber + " is the random number");
+//                s3Client.createBucket(s3BucketName);
+//            }
 
             logger.info("Generating presigned url");
             GeneratePresignedUrlRequest generatePresignedUrlRequest =
@@ -97,10 +101,15 @@ public class SearchController {
 
             return s3Client.generatePresignedUrl(generatePresignedUrlRequest).toString();
 
+        } catch (AmazonDynamoDBException e) {
+            String message = "Encountered DynamoDB exception while searching in the table.";
+            logger.error(message, e);
+            throw new ResponseStatusException((HttpStatus.INTERNAL_SERVER_ERROR), message);
         } catch (Exception e) {
-            logger.error("Error while accessing S3 bucket", e);
             span.recordException(e);
-            throw (e);
+            String message = "Error while searching, building the resulting body";
+            logger.error(message, e);
+            throw new ResponseStatusException((HttpStatus.INTERNAL_SERVER_ERROR), message);
         } finally {
             span.end();
         }

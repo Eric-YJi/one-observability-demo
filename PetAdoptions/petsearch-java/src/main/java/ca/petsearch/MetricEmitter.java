@@ -16,16 +16,19 @@ public class MetricEmitter {
     static final String DIMENSION_API_NAME = "apiName";
     static final String DIMENSION_STATUS_CODE = "statusCode";
 
-    static String API_COUNTER_METRIC = "apiBytesSent";
+    static String API_COUNTER_METRIC = "api.bytes_sent";
     static String API_LATENCY_METRIC = "latency";
-    static String PETS_RETURNED_METRIC = "petsReturned";
+    static String API_REQUESTS_METRIC = "requests";
+    static String PETS_RETURNED_METRIC = "pets_returned";
 
     private LongCounter apiBytesSentCounter;
     private LongHistogram apiLatencyHistogram;
     private LongCounter petsReturned;
+    private LongCounter faults;
+    private LongCounter requests;
 
     public MetricEmitter(OpenTelemetry otel) {
-        Meter meter = otel.meterBuilder("aws-otel").setInstrumentationVersion("1.0").build();
+        Meter meter = otel.meterBuilder("petsearch").setInstrumentationVersion("1.0").build();
 
         logger.debug("OTLP port is: " + System.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"));
 
@@ -54,6 +57,12 @@ public class MetricEmitter {
                         .setUnit("one")
                         .build();
 
+        requests =
+                meter
+                        .counterBuilder(API_REQUESTS_METRIC)
+                        .setDescription("Number of requests")
+                        .setUnit("one")
+                        .build();
 
         apiLatencyHistogram =
                 meter
@@ -92,6 +101,10 @@ public class MetricEmitter {
 
     public void emitPetsReturnedMetric(int petsCount) {
         petsReturned.add(petsCount);
+    }
+
+    public void emitRequestsMetric(String apiName, String statusCode) {
+        requests.add(1, Attributes.of(AttributeKey.stringKey(DIMENSION_API_NAME), apiName, AttributeKey.stringKey(DIMENSION_STATUS_CODE), statusCode));
     }
 
 }

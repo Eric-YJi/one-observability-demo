@@ -35,5 +35,7 @@ public class ApplicationFilter implements Filter {
 
 
         metricEmitter.emitBytesSentMetric(loadSize, ((HttpServletRequest)request).getServletPath(), statusCode);
+
+        metricEmitter.emitRequestsMetric(((HttpServletRequest)request).getServletPath(), statusCode);
     }
 }
